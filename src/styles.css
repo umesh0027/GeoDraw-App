@@ -1,0 +1,72 @@
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  font-family: Arial, Helvetica, sans-serif;
+}
+.leaflet-container {
+  height: 100%;
+  width: 100%;
+}
+button {
+  margin: 6px 0;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  background: #fff;
+  cursor: pointer;
+}
+button[disabled] { opacity: 0.5; cursor: not-allowed; }
+.toolbar-mode { font-weight: bold;
+color: blue; }
+.error { color: red; margin-bottom: 8px; }
+
+
+
+.stop-drawing-btn {
+  background-color: red;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.stop-drawing-btn:hover {
+  background-color: darkred;
+}
+
+
+.mode-btn {
+  display: block;
+  background-color: yellow;
+  color: black;
+  margin: 5px 0;
+}
+
+.mode-btn:hover {
+  background-color: goldenrod;
+}
+.Dismiss-btn {
+  background-color: lightgray;
+  color: black;
+  border: none;
+  padding: 5px 10px;
+  cursor: pointer;
+
+}
+.Dismiss-btn:hover {
+  background-color: gray;
+  color: white;
+}
+.export-btn {
+  background-color: lightgreen;
+  color: black;
+  border: none;
+  padding: 10px 20px;
+  cursor: pointer;
+ 
+}
+.export-btn:hover {
+  background-color: green;
+  color: white;
+}
