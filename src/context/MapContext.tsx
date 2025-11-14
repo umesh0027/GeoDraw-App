@@ -50,20 +50,40 @@ export const MapProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [state, dispatch] = useReducer(mapReducer, initialState);
   const { handlePolygonAddition, isFeatureCountWithinLimit } = useSpatialConstraintsLogic(state.features);
 
+
   const addFeature = (newFeature: GeoFeature): boolean => {
     const shapeType = newFeature.properties.shapeType;
+
+    // ✅ Step 1: Check count limit (max shapes per type)
     if (!isFeatureCountWithinLimit(shapeType)) {
-      dispatch({ type: 'SET_ERROR', payload: `Max limit reached for ${shapeType}s.` });
+      dispatch({
+        type: "SET_ERROR",
+        payload: `⚠️ Max limit reached for ${shapeType}s.`,
+      });
       return false;
     }
 
+    // ✅ Step 2: Skip spatial rules for LineStrings
+    if (shapeType === "LineString") {
+      if (!newFeature.properties.id) newFeature.properties.id = uuidv4();
+      dispatch({ type: "ADD_FEATURE", payload: newFeature });
+      dispatch({ type: "SET_ERROR", payload: null });
+      return true;
+    }
+
+    // ✅ Step 3: Apply non-overlap + auto-trim rules for polygons, rectangles, circles
     const { success, finalFeature, error } = handlePolygonAddition(newFeature);
+
     if (success && finalFeature) {
       if (!finalFeature.properties.id) finalFeature.properties.id = uuidv4();
-      dispatch({ type: 'ADD_FEATURE', payload: finalFeature });
+      dispatch({ type: "ADD_FEATURE", payload: finalFeature });
+      dispatch({ type: "SET_ERROR", payload: null });
       return true;
     } else {
-      if (error) dispatch({ type: 'SET_ERROR', payload: error });
+      dispatch({
+        type: "SET_ERROR",
+        payload: error || "❌ Failed to add feature due to spatial constraints.",
+      });
       return false;
     }
   };
