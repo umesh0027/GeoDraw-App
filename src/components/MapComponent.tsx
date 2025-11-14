@@ -1,24 +1,20 @@
+
 import React, { useEffect, useRef } from "react";
 import { MapContainer, TileLayer, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import "leaflet-draw/dist/leaflet.draw.css";
-import "leaflet-draw"; 
+import "leaflet-draw";
 import { useMapFeatures } from "../context/MapContext";
 import { v4 as uuidv4 } from "uuid";
 import type { GeoFeature, ShapeType } from "../context/types";
-import { MAX_SHAPES_CONFIG } from "../utils/config";
-
-
-import booleanIntersects from "@turf/boolean-intersects";
-import difference from "@turf/difference";
 import circle from "@turf/circle";
-
 
 import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
 import markerIcon from "leaflet/dist/images/marker-icon.png";
 import markerShadow from "leaflet/dist/images/marker-shadow.png";
 
+// ✅ Fix Leaflet marker icons
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: markerIcon2x,
@@ -34,16 +30,41 @@ function DrawControlConnector() {
   const drawnItems = useRef(new L.FeatureGroup()).current;
 
   useEffect(() => {
-    drawnItems.addTo(map);
+    // ✅ Keep previously drawn shapes visible
+    if (!map.hasLayer(drawnItems)) {
+      drawnItems.addTo(map);
+    }
 
-   
+    // ✅ Drawing control setup
     const drawControl = new (L.Control as any).Draw({
       position: "topright",
       draw: {
-        polyline: true,
-        polygon: true,
-        rectangle: true,
-        circle: true,
+        polyline: {
+          shapeOptions: {
+            color: "#1a1a1a", // dark black lines
+            weight: 4,
+            opacity: 1,
+          },
+        },
+        polygon: {
+          shapeOptions: {
+            color: "#0077ff",
+            fillColor: "#66aaff",
+            fillOpacity: 0.4,
+          },
+        },
+        rectangle: {
+          shapeOptions: {
+            color: "#00cc88",
+            fillOpacity: 0.3,
+          },
+        },
+        circle: {
+          shapeOptions: {
+            color: "#ff6600",
+            fillOpacity: 0.3,
+          },
+        },
         marker: false,
         circlemarker: false,
       },
@@ -56,7 +77,7 @@ function DrawControlConnector() {
 
     map.addControl(drawControl);
 
-   
+    // ✅ When a shape is created
     const onCreated = (e: any) => {
       const layer = e.layer;
       const layerType: string = e.layerType;
@@ -93,19 +114,25 @@ function DrawControlConnector() {
 
       const added = addFeature(geoFeature);
       if (!added) {
-  
         if (layer && layer.remove) layer.remove();
       } else {
         (layer as any).__featureId = geoFeature.properties.id;
+
+        // ✅ Add to group — ensures all remain visible
         drawnItems.addLayer(layer);
+
+        if (!map.hasLayer(drawnItems)) {
+          map.addLayer(drawnItems);
+        }
       }
     };
 
-  
+    // ✅ When shapes are edited
     const onEdited = (e: any) => {
       e.layers.eachLayer((layer: any) => {
         const id = layer.__featureId;
         if (!id) return;
+
         let updatedGeo: GeoFeature | null = null;
         if (layer instanceof L.Circle) {
           const center = layer.getLatLng();
@@ -129,7 +156,7 @@ function DrawControlConnector() {
       });
     };
 
-  
+    // ✅ When shapes are deleted
     const onDeleted = (e: any) => {
       e.layers.eachLayer((layer: any) => {
         const id = layer.__featureId;
@@ -137,22 +164,21 @@ function DrawControlConnector() {
       });
     };
 
- 
+    // ✅ Attach events
     map.on((L as any).Draw.Event.CREATED, onCreated);
     map.on((L as any).Draw.Event.EDITED, onEdited);
     map.on((L as any).Draw.Event.DELETED, onDeleted);
 
-   
+    // ✅ Cleanup (don’t clear drawn shapes)
     return () => {
       map.off((L as any).Draw.Event.CREATED, onCreated);
       map.off((L as any).Draw.Event.EDITED, onEdited);
       map.off((L as any).Draw.Event.DELETED, onDeleted);
       try {
         map.removeControl(drawControl);
-      } catch {
-       
-      }
-      drawnItems.clearLayers();
+      } catch {}
+      // ❌ Don't clear existing shapes
+      // drawnItems.clearLayers();
     };
   }, [map, addFeature, deleteFeature, updateFeature, features, drawnItems]);
 
